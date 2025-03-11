@@ -197,6 +197,11 @@ let check_assignment env id expr =
   | _ -> ());
   ignore (tequal id_type expr_type "assignment")
 
+
+
+
+
+
 let rec check_codeblock env codeblock =
   match codeblock with
   | [] -> ()
@@ -261,10 +266,15 @@ and check_local_dec env typ id expr =
   ignore (tequal typ expr_type "local declaration");
   new_env
 
+let check_checks env checks =
+  List.iter (fun check ->
+    match check with
+    | Check codeblock -> check_codeblock env codeblock) checks
+
 let check_program (prog : Ast.program) =
   match prog with
-  | Program (decl_list, Init c1, Telemetry c2, Check c3) ->
+  | Program (decl_list, Init c1, Telemetry c2, c3) ->
       let env = add_decs empty_env decl_list in
       check_codeblock env c1;
       check_codeblock env c2;
-      check_codeblock env c3
+      check_checks env c3

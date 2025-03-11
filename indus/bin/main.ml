@@ -19,19 +19,25 @@ open Tpc
 open Topology_parser
 
 let create_formatted_program
-    (Ast.Program (decs, init, telemetry, checker) as prog) built_ins is_leaf =
+    (Ast.Program (decs, init, telemetry, checkers) as prog) built_ins is_leaf switch_id =
+
   let symbol_t = Ast_util.symbol_table prog in
   let parser_decls = Codegen.to_p4_decls decs built_ins in
   let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
+  let petr4_checkers = Programgen.transform_checker checkers symbol_t  in
   let program =
     Petr4.Surface.Program
       (parser_decls
       @
-      if not is_leaf then [ petr4_telemetry ]
+      if not is_leaf then 
+      (* TODO 2.27_1
+      let petr4_eh_checker = Programgen.transform_eh_checker checker symbol_t in
+      [ petr4_telemetry;petr4_eh_checker]
+      TODO 2.27_1*)
+      [ petr4_telemetry ] @ petr4_checkers
       else
         let petr4_init = Programgen.transform_init init symbol_t in
-        let petr4_checker = Programgen.transform_checker checker symbol_t in
-        [ petr4_init; petr4_telemetry; petr4_checker ])
+        [ petr4_init; petr4_telemetry ] @ petr4_checkers)
   in
   Petr4.Pretty.format_program program
 
@@ -50,7 +56,7 @@ let generate_from_topology prog built_ins tpc_file topology : unit =
       Printf.printf "Generating P4 files for %s and %d switches\n" title
         switches;
       let formatted_programs =
-        List.map (fun (i, b) -> create_formatted_program prog built_ins b) topo
+        List.map (fun (i, b) -> create_formatted_program prog built_ins b i) topo
       in
       let directory = "generated_p4" in
       if Sys.file_exists directory then (
@@ -78,15 +84,15 @@ let generate_from_topology prog built_ins tpc_file topology : unit =
 let generate_print_p4 prog built_ins : unit =
   let symbol_t = Ast_util.symbol_table prog in
   match prog with
-  | Program (decs, init, telemetry, checker) ->
+  | Program (decs, init, telemetry, checkers) ->
       (* let parser_decls = Codegen.to_p4_decls decs in *)
       let parser_decls = [] in
       let petr4_init = Programgen.transform_init init symbol_t in
       let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
-      let petr4_checker = Programgen.transform_checker checker symbol_t in
+      let petr4_checkers = Programgen.transform_checker checkers symbol_t in
       let program =
         Petr4.Surface.Program
-          (parser_decls @ [ petr4_init; petr4_telemetry; petr4_checker ])
+          (parser_decls @ [ petr4_init; petr4_telemetry ] @ petr4_checkers)
       in
       let formatted_prog = Petr4.Pretty.format_program program in
       Format.printf "@[%a@]@\n" Pp.to_fmt formatted_prog
@@ -101,7 +107,10 @@ let go verbose tpc_file topology_file : unit =
     Topology_parser.print_topology topology;
     let prog, built_ins = Parser.program Lexer.token lexbuf in
     Printf.printf "Successfully Parsed\n";
+    
+    (* Add this line to print the program *)
     Format.printf "@[%a@]@\n" Pp.to_fmt (Pretty.format_program prog);
+    
     Type_checker.check_program prog;
     Format.printf "Succesfully Typechecked\n";
     (* generate_print_p4 prog built_ins *)
@@ -115,8 +124,8 @@ let go verbose tpc_file topology_file : unit =
   | Failure s -> Printf.printf "Failure: %s\n" s
   | Sys_error s -> Printf.printf "Sys error: %s\n" s
   | _ ->
-      Printf.eprintf "Parsing error\n%s: line %d\n" (Lexer.filename ())
-        (Lexer.line_number ())
+    Printf.eprintf "Parsing error????\n%s: line %d\n" (Lexer.filename ())
+      (Lexer.line_number ())
 
 let command =
   Command.basic ~summary:"TPC: Tiny Packet Checkers"
@@ -124,6 +133,9 @@ let command =
       let verbose = flag "-verbose" no_arg ~doc:"Verbose mode"
       and file = anon ("tpc_file" %: string)
       and top_file = anon ("top_file" %: string) in
-      fun () -> go verbose file top_file]
+      fun () -> 
+      go verbose file top_file]
+
 
 let () = Command_unix.run ~version:"0.0.1" command
+

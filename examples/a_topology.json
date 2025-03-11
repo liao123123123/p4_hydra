@@ -1,0 +1,22 @@
+{
+    "title": "Basic Topology",
+    "switches": 4,
+    "topology": [
+        {
+            "id": 1,
+            "leaf": true
+        },
+        {
+            "id": 2,
+            "leaf": true
+        },
+        {
+            "id": 3,
+            "leaf": false
+        },
+        {
+            "id": 4,
+            "leaf": false
+        }
+    ]
+}

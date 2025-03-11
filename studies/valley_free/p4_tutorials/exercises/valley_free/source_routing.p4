@@ -48,7 +48,7 @@ header ipv4_t {
 
 struct metadata {
     bool first_hop;
-    bool last_hop; 
+    bool last_hop;
     hydra_metadata_t hydra_metadata;
 }
 
@@ -210,7 +210,7 @@ control MyEgress(inout headers hdr,
         size = 512;
     }
 
-    apply {  
+    apply {
         telemetryControl.apply(hdr.hydra_header, meta.hydra_metadata);
         tb_check_last_hop.apply();
         if (meta.last_hop) {

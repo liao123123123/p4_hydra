@@ -18,7 +18,3 @@ check {
     prev_slice = slice;
   }
 }
-
-check {
-
-}

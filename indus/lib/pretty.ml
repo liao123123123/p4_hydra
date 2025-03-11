@@ -159,12 +159,15 @@ let format_tele = function
   | Telemetry statements ->
       text "tele" ++ Pp.space ++ format_statements statements
 
-let format_check = function
+(*TODO3.5*)
+let rec format_check = function
   | Check statements -> text "check" ++ Pp.space ++ format_statements statements
+and format_checks = function
+  | checks -> Pp.concat_map ~sep:Pp.space checks ~f:format_check
 
 let format_program = function
-  | Program (declarations, init, tele, check) ->
+  | Program (declarations, init, tele, checks) ->
       box
         (format_declarations declarations
         ++ Pp.newline ++ format_init init ++ Pp.newline ++ format_tele tele
-        ++ Pp.newline ++ format_check check ++ Pp.newline)
+        ++ Pp.newline ++ format_checks checks ++ Pp.newline)

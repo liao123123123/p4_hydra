@@ -1,0 +1,66 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{booktabs}
+
+\begin{document}
+
+\begin{tabular}{l l l l l}
+\toprule
+\multirow{2}{*}{\begin{tabular}{l l}
+  $p$ & ::= $\overline{d}$ sinit stele scheck \\
+  $d$ & ::= \\
+  & | tele $t$ x := $e$ \\
+  & | sensor $t$ x := $e$ \\
+  & | header $t$ x \\
+  & | control $t$ x \\
+  $e$ & ::= \\
+  & | x \\
+  & | v \\
+  & | $\oplus(\overline{e})$ \\
+  & | $e_1[e_2]$ \\
+  $s$ & ::= \\
+  & | pass \\
+  & | $s_1;s_2$ \\
+  & | x := $e$ \\
+  & | if ($e_1$) then $s_1$ else $s_2$ \\
+  & | for (x in $e$) s \\
+  & | exn \\
+\end{tabular}} &
+\multirow{2}{*}{\begin{tabular}{l l}
+  & Programs \\
+  & Declarations \\
+  & Expressions \\
+  & Statements \\
+\end{tabular}} &
+\multirow{2}{*}{\begin{tabular}{l l}
+  $t$ & ::= bit$\langle n\rangle$ \\
+  & | bool \\
+  & | $t[n]$ \\
+  & | set$\langle t\rangle$ \\
+  & | dict$\langle t_1, t_2\rangle$ \\
+  $\oplus$ & ::= + | - | * | / \\
+  & | $\sim$ | \& | | \\
+  & | == | < | <= | ! | \&\& | || \\
+  & | $\in$ | $\notin$ \\
+  & | length | push \\
+  $v$ & ::= \\
+  & | $n$ \\
+  & | $b$ \\
+  & | $[\overline{v}]$ \\
+  exn & ::= \\
+  & | report \\
+  & | reject \\
+\end{tabular}} &
+\multirow{2}{*}{\begin{tabular}{l l}
+  & Types \\
+  & Operators \\
+  & Values \\
+  & Exceptions \\
+\end{tabular}} \\
+& & & & \\
+\bottomrule
+\end{tabular}
+
+\end{document}

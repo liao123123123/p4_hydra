@@ -7,7 +7,13 @@ let packet_length = ref false
 let last_hop = ref false
 let first_hop = ref false
 let to_be_dropped = ref false
+
+let debug = true
+
+let print_debug msg =
+  if debug then Printf.eprintf "%s\n" msg
 %}
+
 
 (* TODO: 
  * deal with Hexadecimal and binary
@@ -126,8 +132,9 @@ let to_be_dropped = ref false
 
 
 program:
-  | d=decl* i=init t=telemetry c=check EOF
-    {(Program(d, i, t, c) , {
+  | d=decl* i=init t=telemetry c=check* EOF
+    {
+  (Program(d, i, t, c) , {
   path = !path;
   path_length = !path_length;
   packet_length = !packet_length;
@@ -137,13 +144,17 @@ program:
 })}
 
 init:
-  | INIT c=codeblock {Init c}
+  | INIT c=codeblock {
+    Init c
+    }
 
 telemetry:
   | TELEMETRY c=codeblock {Telemetry c}
 
 check:
-  | CHECK c=codeblock {Check c}
+  | CHECK c=codeblock {
+      Check c
+    }
 
 codeblock: 
   | LBLOCK st=statement* RBLOCK {st}

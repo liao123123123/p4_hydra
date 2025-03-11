@@ -19,6 +19,7 @@ type var_type =
 
 type value = Int of int | Bool_const of bool | List_const of value list
 
+(*二元运算*)
 type bop =
   | Plus
   | Minus
@@ -41,6 +42,7 @@ type bop =
   | Min
   | Max
 
+(*一元运算*)
 type uop = Bnot | Lnot | Abs | Length
 
 type expr =
@@ -70,8 +72,9 @@ and codeblock = statement list
 type decl = Decl of net_type * var_type * id
 type init = Init of codeblock
 type telemetry = Telemetry of codeblock
-type check = Check of codeblock
-type program = Program of decl list * init * telemetry * check
+(*TODO：3.3*)
+type check = Check of  codeblock
+type program = Program of decl list * init * telemetry * check list
 
 type built_ins = {
   path : bool;

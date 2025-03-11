@@ -913,6 +913,37 @@ let transform_init (Init init_block) symbol_t : Petr4.Surface.Declaration.t =
         | Some _ -> insert_stmts_block [ mk_control_init_apply ] block);
     }
 
+(*Returns a Control block, containing the init code*)
+let transform_init (Init init_block) symbol_t : Petr4.Surface.Declaration.t =
+  let control_non_dict_action = mk_control_init_action symbol_t in
+  let control_dict_decls = mk_dict_declarations init_block symbol_t in
+  let locals =
+    match (control_non_dict_action, control_dict_decls) with
+    | None, None -> []
+    | Some action, None -> [ action; mk_control_init_tb ]
+    | None, Some action -> action
+    | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
+  in
+  let push_variables = mk_push_variables symbol_t in
+  let block =
+    transform_block init_block true symbol_t
+    |> insert_stmts_block push_variables
+  in
+  Control
+    {
+      tags = p4info_tpc;
+      annotations = [];
+      name = mk_p4string "initControl";
+      type_params = [];
+      params = mk_parameter_list;
+      constructor_params = [];
+      locals;
+      apply =
+        (match control_non_dict_action with
+        | None -> block
+        | Some _ -> insert_stmts_block [ mk_control_init_apply ] block);
+    }
+
 (* Returns a Control block, containing the Telemetry code*)
 let transform_telemetry (Telemetry tele_block) symbol_t :
     Petr4.Surface.Declaration.t =
@@ -942,7 +973,45 @@ let transform_telemetry (Telemetry tele_block) symbol_t :
               (transform_block tele_block true symbol_t));
     }
 
-let transform_checker (Check checker_block : check) symbol_t :
+let transform_checker (checks : check list) symbol_t : Petr4.Surface.Declaration.t list =
+  List.fold_right (fun (Check block) acc ->
+    let control_non_dict_action = mk_control_init_action symbol_t in
+    let control_dict_decls = mk_dict_declarations block symbol_t in
+    let locals =
+      match (control_non_dict_action, control_dict_decls) with
+      | None, None -> []
+      | Some action, None -> [ action; mk_control_init_tb ]
+      | None, Some action -> action
+      | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
+    in
+    let strip_variables = mk_strip_telemetry symbol_t in
+    let transformed_block =
+      transform_block block true symbol_t
+      |> insert_stmts_block_end strip_variables
+    in
+    let apply_block =
+      match control_non_dict_action with
+      | None -> transformed_block 
+      | Some _ -> insert_stmts_block [ mk_control_init_apply ] transformed_block
+    in
+    let control_decl = 
+      Petr4.Surface.Declaration.Control
+        {
+          tags = p4info_tpc;
+          annotations = [];
+          name = mk_p4string "checkerControl";
+          type_params = [];
+          params = mk_parameter_list;
+          constructor_params = [];
+          locals;
+          apply = apply_block;
+        }
+    in
+    control_decl :: acc
+  ) checks []
+
+(*TODO 2.27_2*)
+let transform_eh_checker (Check checker_block : check) symbol_t :
     Petr4.Surface.Declaration.t =
   let control_non_dict_action = mk_control_init_action symbol_t in
   let control_dict_decls = mk_dict_declarations checker_block symbol_t in
@@ -953,10 +1022,14 @@ let transform_checker (Check checker_block : check) symbol_t :
     | None, Some action -> action
     | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
   in
+  (*
   let strip_variables = mk_strip_telemetry symbol_t in
+  *)
   let block =
     transform_block checker_block true symbol_t
+    (*
     |> insert_stmts_block_end strip_variables
+    *)
   in
   Control
     {
