@@ -131,32 +131,6 @@ control checkerControl(inout hydra_header_t hydra_header,
   apply
     {
     tb_init_cp_vars.apply();
-    bit<32> prev_slice = hydra_header.slices[0].value;
-    bit<32> slice;
-    if (hydra_header.slices[0].isValid())
-      {
-      slice = hydra_header.slices[0];
-      if (prev_slice!=slice) {
-        hydra_metadata.reject0 = true;
-      }
-      prev_slice = slice;
-      if (hydra_header.slices[1].isValid())
-        {
-        slice = hydra_header.slices[1];
-        if (prev_slice!=slice) {
-          hydra_metadata.reject0 = true;
-        }
-        prev_slice = slice;
-        if (hydra_header.slices[2].isValid())
-          {
-          slice = hydra_header.slices[2];
-          if (prev_slice!=slice) {
-            hydra_metadata.reject0 = true;
-          }
-          prev_slice = slice;
-        }
-      }
-    }
     hydra_header.eth_type.setInvalid();
     hydra_header.variables.setInvalid();
     hydra_header.slices_preamble.setInvalid();

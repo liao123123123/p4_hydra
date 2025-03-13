@@ -1,5 +1,5 @@
 (* for now a topology is a simple mapping from switch ID to a boolean. True is a leaf switch false is a core switch*)
-type topology = { title : string; switches : int; topology : (int * bool) list }
+type topology = { title : string; switches : int; topology : (int * bool * bool) list }
 
 let json2topology file =
   let json = Yojson.Basic.from_file file in
@@ -12,7 +12,8 @@ let json2topology file =
       (fun json ->
         let id = member "id" json |> to_int in
         let leaf = member "leaf" json |> to_bool in
-        (id, leaf))
+        let enable_check = member "enable_check" json |> to_bool in
+        (id, leaf, enable_check))
       entries
   in
   { title; switches; topology }
@@ -20,8 +21,8 @@ let json2topology file =
 let print_topology (topology : topology) : unit =
   let rec format_topology = function
     | [] -> ""
-    | (id, leaf) :: t ->
-        Printf.sprintf "id: %d, leaf: %b\n" id leaf ^ format_topology t
+    | (id, leaf, enable_check) :: t ->
+        Printf.sprintf "id: %d, leaf: %b, enable_check: %b\n" id leaf enable_check ^ format_topology t
   in
   match topology with
   | { title; switches; topology } ->

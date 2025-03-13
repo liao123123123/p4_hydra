@@ -4,19 +4,23 @@
     "topology": [
         {
             "id": 1,
-            "leaf": true
+            "leaf": true,
+            "enable_check": true
         },
         {
             "id": 2,
-            "leaf": true
+            "leaf": false,
+            "enable_check": false
         },
         {
             "id": 3,
-            "leaf": false
+            "leaf": false,
+            "enable_check": false
         },
         {
             "id": 4,
-            "leaf": false
+            "leaf": true,
+            "enable_check": true
         }
     ]
 }

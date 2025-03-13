@@ -19,12 +19,13 @@ open Tpc
 open Topology_parser
 
 let create_formatted_program
-    (Ast.Program (decs, init, telemetry, checkers) as prog) built_ins is_leaf switch_id =
+    (Ast.Program (decs, init, telemetry, checkers) as prog) built_ins is_leaf switch_id enable_check =
 
   let symbol_t = Ast_util.symbol_table prog in
   let parser_decls = Codegen.to_p4_decls decs built_ins in
   let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
-  let petr4_checkers = Programgen.transform_checker checkers symbol_t  in
+  let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check in
+
   let program =
     Petr4.Surface.Program
       (parser_decls
@@ -34,10 +35,10 @@ let create_formatted_program
       let petr4_eh_checker = Programgen.transform_eh_checker checker symbol_t in
       [ petr4_telemetry;petr4_eh_checker]
       TODO 2.27_1*)
-      [ petr4_telemetry ] @ petr4_checkers
+      [ petr4_telemetry;petr4_checkers ] 
       else
         let petr4_init = Programgen.transform_init init symbol_t in
-        [ petr4_init; petr4_telemetry ] @ petr4_checkers)
+        [ petr4_init; petr4_telemetry ;petr4_checkers])
   in
   Petr4.Pretty.format_program program
 
@@ -56,7 +57,7 @@ let generate_from_topology prog built_ins tpc_file topology : unit =
       Printf.printf "Generating P4 files for %s and %d switches\n" title
         switches;
       let formatted_programs =
-        List.map (fun (i, b) -> create_formatted_program prog built_ins b i) topo
+        List.map (fun (i, b,ec) -> create_formatted_program prog built_ins b i ec) topo
       in
       let directory = "generated_p4" in
       if Sys.file_exists directory then (
@@ -81,7 +82,7 @@ let generate_from_topology prog built_ins tpc_file topology : unit =
       in
       ignore (List.mapi print_file formatted_programs)
 
-let generate_print_p4 prog built_ins : unit =
+let generate_print_p4 prog built_ins enable_check: unit =
   let symbol_t = Ast_util.symbol_table prog in
   match prog with
   | Program (decs, init, telemetry, checkers) ->
@@ -89,10 +90,10 @@ let generate_print_p4 prog built_ins : unit =
       let parser_decls = [] in
       let petr4_init = Programgen.transform_init init symbol_t in
       let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
-      let petr4_checkers = Programgen.transform_checker checkers symbol_t in
+      let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check in
       let program =
         Petr4.Surface.Program
-          (parser_decls @ [ petr4_init; petr4_telemetry ] @ petr4_checkers)
+          (parser_decls @ [ petr4_init; petr4_telemetry ;petr4_checkers] )
       in
       let formatted_prog = Petr4.Pretty.format_program program in
       Format.printf "@[%a@]@\n" Pp.to_fmt formatted_prog

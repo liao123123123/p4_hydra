@@ -4,7 +4,8 @@
     "topology": [
         {
             "id": 1,
-            "leaf": true
+            "leaf": true,
+            "enable_check": true
         }
     ]
 }

@@ -973,42 +973,6 @@ let transform_telemetry (Telemetry tele_block) symbol_t :
               (transform_block tele_block true symbol_t));
     }
 
-let transform_checker (checks : check list) symbol_t : Petr4.Surface.Declaration.t list =
-  List.fold_right (fun (Check block) acc ->
-    let control_non_dict_action = mk_control_init_action symbol_t in
-    let control_dict_decls = mk_dict_declarations block symbol_t in
-    let locals =
-      match (control_non_dict_action, control_dict_decls) with
-      | None, None -> []
-      | Some action, None -> [ action; mk_control_init_tb ]
-      | None, Some action -> action
-      | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
-    in
-    let strip_variables = mk_strip_telemetry symbol_t in
-    let transformed_block =
-      transform_block block true symbol_t
-      |> insert_stmts_block_end strip_variables
-    in
-    let apply_block =
-      match control_non_dict_action with
-      | None -> transformed_block 
-      | Some _ -> insert_stmts_block [ mk_control_init_apply ] transformed_block
-    in
-    let control_decl = 
-      Petr4.Surface.Declaration.Control
-        {
-          tags = p4info_tpc;
-          annotations = [];
-          name = mk_p4string "checkerControl";
-          type_params = [];
-          params = mk_parameter_list;
-          constructor_params = [];
-          locals;
-          apply = apply_block;
-        }
-    in
-    control_decl :: acc
-  ) checks []
 
 (*TODO 2.27_2*)
 let transform_eh_checker (Check checker_block : check) symbol_t :
@@ -1022,14 +986,10 @@ let transform_eh_checker (Check checker_block : check) symbol_t :
     | None, Some action -> action
     | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
   in
-  (*
   let strip_variables = mk_strip_telemetry symbol_t in
-  *)
   let block =
     transform_block checker_block true symbol_t
-    (*
     |> insert_stmts_block_end strip_variables
-    *)
   in
   Control
     {
@@ -1045,3 +1005,30 @@ let transform_eh_checker (Check checker_block : check) symbol_t :
         | None -> block
         | Some _ -> insert_stmts_block [ mk_control_init_apply ] block);
     }
+let current_check_index = ref 0  (* 用于跟踪当前处理到哪个check *)
+
+let empty_declaration : Petr4.Surface.Declaration.t =
+  Surface.Declaration.Variable {
+    tags = p4info_tpc;  (* 根据需要设置 tags *)
+    annotations = [];   (* 空的注释 *)
+    typ = Surface.Type.Bool { tags = p4info_tpc };  (* 示例类型，您可以根据需要更改 *)
+    name = mk_p4string "no_check";  (* 示例名称 *)
+    init = None;  (* 或者根据需要设置初始值 *)
+  }
+
+let transform_checker (checks : check list) symbol_t enable_check : Petr4.Surface.Declaration.t =
+  let process_check check =
+    transform_eh_checker check symbol_t
+  in
+
+  (* 打印 checks 列表的长度 *)
+  (*Printf.printf "Length of checks: %d\n" (List.length checks);*)
+  
+  (* 如果启用了 enable_check，每次只处理一个 check *)
+  if enable_check && (!current_check_index < List.length checks) then (
+    let current_check = List.nth checks !current_check_index in
+    current_check_index := !current_check_index + 1;  (* 更新索引 *)
+    process_check current_check  (* 返回当前的声明 *)
+  ) else (
+    empty_declaration
+  ) 
