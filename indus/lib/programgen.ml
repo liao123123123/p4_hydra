@@ -975,7 +975,7 @@ let transform_telemetry (Telemetry tele_block) symbol_t :
 
 
 (*TODO 2.27_2*)
-let transform_eh_checker (Check checker_block : check) symbol_t :
+let transform_eh_checker (Check checker_block : check) symbol_t is_leaf:
     Petr4.Surface.Declaration.t =
   let control_non_dict_action = mk_control_init_action symbol_t in
   let control_dict_decls = mk_dict_declarations checker_block symbol_t in
@@ -986,10 +986,9 @@ let transform_eh_checker (Check checker_block : check) symbol_t :
     | None, Some action -> action
     | Some action1, Some action2 -> [ action1; mk_control_init_tb ] @ action2
   in
-  let strip_variables = mk_strip_telemetry symbol_t in
   let block =
     transform_block checker_block true symbol_t
-    |> insert_stmts_block_end strip_variables
+    |> (if  is_leaf then insert_stmts_block_end (mk_strip_telemetry symbol_t) else fun x -> x)
   in
   Control
     {
@@ -1016,9 +1015,9 @@ let empty_declaration : Petr4.Surface.Declaration.t =
     init = None;  (* 或者根据需要设置初始值 *)
   }
 
-let transform_checker (checks : check list) symbol_t enable_check : Petr4.Surface.Declaration.t =
+let transform_checker (checks : check list) symbol_t enable_check is_leaf : Petr4.Surface.Declaration.t =
   let process_check check =
-    transform_eh_checker check symbol_t
+    transform_eh_checker check symbol_t is_leaf
   in
 
   (* 打印 checks 列表的长度 *)

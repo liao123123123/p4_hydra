@@ -24,7 +24,7 @@ let create_formatted_program
   let symbol_t = Ast_util.symbol_table prog in
   let parser_decls = Codegen.to_p4_decls decs built_ins in
   let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
-  let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check in
+  let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check is_leaf in
 
   let program =
     Petr4.Surface.Program
@@ -82,7 +82,7 @@ let generate_from_topology prog built_ins tpc_file topology : unit =
       in
       ignore (List.mapi print_file formatted_programs)
 
-let generate_print_p4 prog built_ins enable_check: unit =
+let generate_print_p4 prog built_ins enable_check is_leaf: unit =
   let symbol_t = Ast_util.symbol_table prog in
   match prog with
   | Program (decs, init, telemetry, checkers) ->
@@ -90,7 +90,7 @@ let generate_print_p4 prog built_ins enable_check: unit =
       let parser_decls = [] in
       let petr4_init = Programgen.transform_init init symbol_t in
       let petr4_telemetry = Programgen.transform_telemetry telemetry symbol_t in
-      let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check in
+      let petr4_checkers = Programgen.transform_checker checkers symbol_t enable_check is_leaf in
       let program =
         Petr4.Surface.Program
           (parser_decls @ [ petr4_init; petr4_telemetry ;petr4_checkers] )
